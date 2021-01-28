@@ -83,6 +83,7 @@ class LiveRoute extends React.Component<PropsType, any> {
   public previousDisplayStyle: string | null = null
   public liveState: LiveState = LiveState.NORMAL_RENDER_ON_INIT
   public currentSideEffect: SideEffect[] = [SideEffect.NO_SIDE_EFFECT]
+  public wrapperedRef:any = null
 
   public componentDidMount() {
     this.getRouteDom()
@@ -114,6 +115,11 @@ class LiveRoute extends React.Component<PropsType, any> {
       // TODO:
     }
     this.routeDom = (routeDom as CacheDom) || this.routeDom
+  }
+
+  public ensureDidMount=(ref) => {
+    this.getRouteDom()
+    this.wrapperedRef = ref
   }
 
   public hideRoute() {
@@ -275,6 +281,15 @@ class LiveRoute extends React.Component<PropsType, any> {
       sensitive
     })
     const matchAnyway = matchOfPath || matchOfLivePath
+
+    if(this.wrapperedRef && hookName == 'onHide')
+    {
+       this.wrapperedRef.componentOnHide &&  this.wrapperedRef.componentOnHide(location!, matchAnyway, history, livePath, alwaysLive)
+    }else if(this.wrapperedRef && hookName == 'onReappear')
+    {
+      this.wrapperedRef.componentOnReappear &&  this.wrapperedRef.componentOnReappear(location!, matchAnyway, history, livePath, alwaysLive)
+    }
+
     if (typeof hook === 'function') {
       hook(location!, matchAnyway, history, livePath, alwaysLive)
     }
@@ -356,7 +371,7 @@ class LiveRoute extends React.Component<PropsType, any> {
     }
 
     // normal render
-    const props = { ...context, location, match: matchOfPath, ensureDidMount: this.getRouteDom }
+    const props = { ...context, location, match: matchOfPath, ensureDidMount: this.ensureDidMount }
 
     // Preact uses an empty array as children by
     // default, so use null if that's the case.
